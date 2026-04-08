@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "Todo" ALTER COLUMN "category" SET DEFAULT 'PERSONAL';

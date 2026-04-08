@@ -46,7 +46,7 @@ model Todo {
   id         String   @id @default(cuid())
   content    String
   note       String?
-  category   Category @default(WORK)
+  category   Category @default(PERSONAL)
   isDone     Boolean  @default(false)
   targetDate DateTime @db.Date
   userId     String

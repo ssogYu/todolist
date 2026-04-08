@@ -2,6 +2,7 @@
   "name": "app",
   "version": "0.1.0",
   "private": true,
+  "author":"ssngyu",
   "scripts": {
     "setup": "npm install && npm run db:up && npm run prisma:generate && npm run migrate:deploy",
     "dev": "next dev",
