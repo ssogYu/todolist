@@ -87,7 +87,7 @@ export function AuthForm({
     <div className="flex min-h-screen items-center justify-center bg-page px-4 py-10">
       <Card className="w-full max-w-md border-white/80 bg-white/95">
         <CardHeader className="gap-3">
-          <p className="text-sm font-medium text-primary">Spring Todo</p>
+          <p className="text-sm font-medium text-primary">Todo</p>
           <CardTitle className="text-3xl">{content.title}</CardTitle>
           <CardDescription>{content.description}</CardDescription>
         </CardHeader>
@@ -104,7 +104,7 @@ export function AuthForm({
                 id="username"
                 minLength={3}
                 onChange={(event) => setUsername(event.target.value)}
-                placeholder="输入唯一用户名"
+                placeholder="输入户名"
                 required
                 value={username}
               />

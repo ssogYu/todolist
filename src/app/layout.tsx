@@ -5,7 +5,7 @@ import { AuthProvider } from "@/providers/auth-provider";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Spring Todo",
+  title: "Todo",
   description: "支持个人待办、群组监督与实时同步的每日任务看板",
 };
 

@@ -29,6 +29,8 @@ export async function comparePassword(password: string, passwordHash: string) {
   return bcrypt.compare(password, passwordHash);
 }
 
+// 签发 JWT 令牌
+export type JwtToken = string;
 export function signToken(payload: TokenPayload) {
   return jwt.sign(payload, getJwtSecret(), {
     expiresIn: TOKEN_TTL_SECONDS,

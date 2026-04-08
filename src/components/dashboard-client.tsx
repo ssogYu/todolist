@@ -13,6 +13,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogClose,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { clearStoredToken, apiFetch } from "@/lib/api-client";
@@ -39,11 +47,12 @@ export function DashboardClient() {
   const [todoInput, setTodoInput] = useState("");
   const [groupName, setGroupName] = useState("");
   const [inviteCode, setInviteCode] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>();
   const [loading, setLoading] = useState(true);
   const [savingTodo, setSavingTodo] = useState(false);
   const [creatingGroup, setCreatingGroup] = useState(false);
   const [joiningGroup, setJoiningGroup] = useState(false);
+  const [groupPanelOpen, setGroupPanelOpen] = useState(false);
 
   const completedCount = useMemo(
     () => todos.filter((todo) => todo.isDone).length,
@@ -191,11 +200,99 @@ export function DashboardClient() {
 
   return (
     <div className="min-h-screen bg-page">
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 md:px-8 lg:px-10">
+      <Button
+        className="fixed bottom-6 right-6 z-50 shadow-lg"
+        onClick={() => setGroupPanelOpen(true)}
+        size="lg"
+      >
+        群组管理
+      </Button>
+      <Dialog open={groupPanelOpen} onOpenChange={setGroupPanelOpen}>
+        <DialogContent>
+          <DialogClose />
+          <DialogHeader>
+            <DialogTitle>群组管理</DialogTitle>
+            <DialogDescription>创建或加入群组</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-3">
+              <h3 className="text-sm font-medium">创建群组</h3>
+              <form className="space-y-3" onSubmit={handleCreateGroup}>
+                <Input
+                  onChange={(event) => setGroupName(event.target.value)}
+                  placeholder="例如：晨间打卡小队"
+                  required
+                  value={groupName}
+                />
+                <Button
+                  className="w-full"
+                  disabled={creatingGroup}
+                  type="submit"
+                >
+                  {creatingGroup ? <Spinner /> : "创建群组"}
+                </Button>
+              </form>
+            </div>
+
+            <div className="space-y-3">
+              <h3 className="text-sm font-medium">加入群组</h3>
+              <form className="space-y-3" onSubmit={handleJoinGroup}>
+                <Input
+                  onChange={(event) =>
+                    setInviteCode(event.target.value.toUpperCase())
+                  }
+                  placeholder="输入邀请码"
+                  required
+                  value={inviteCode}
+                />
+                <Button
+                  className="w-full"
+                  disabled={joiningGroup}
+                  type="submit"
+                  variant="outline"
+                >
+                  {joiningGroup ? <Spinner /> : "加入群组"}
+                </Button>
+              </form>
+            </div>
+            <div className="space-y-3">
+              <h3 className="text-sm font-medium">我的群组</h3>
+              {groups.length === 0 ? (
+                <div className="rounded-[24px] border border-dashed border-border bg-secondary/40 px-5 py-8 text-sm text-muted-foreground">
+                  还没有加入任何群组。
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {groups.map((group) => (
+                    <Link
+                      className="block rounded-[24px] border border-border bg-secondary/35 px-4 py-4 transition hover:border-primary/40 hover:bg-primary/5"
+                      href={`/groups/${group.id}`}
+                      key={group.id}
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="space-y-1">
+                          <p className="font-medium text-foreground">
+                            {group.name}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            邀请码 {group.inviteCode} · {group.memberCount} 人
+                          </p>
+                        </div>
+                        <Badge>进入</Badge>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-2 px-4 py-6 md:px-8 lg:px-10">
         <Card className="overflow-hidden bg-white/95">
           <CardContent className="flex flex-col gap-4 px-6 py-6 md:flex-row md:items-center md:justify-between">
             <div className="space-y-2">
-              <p className="text-sm font-medium text-primary">Spring Todo</p>
+              <p className="text-sm font-medium text-primary">Todo List</p>
               <div className="flex flex-wrap items-center gap-3">
                 <h1 className="text-3xl font-semibold tracking-tight">
                   你好，{user?.username}
@@ -203,8 +300,7 @@ export function DashboardClient() {
                 <Badge>{formatDisplayDate(selectedDate)}</Badge>
               </div>
               <p className="text-sm text-muted-foreground">
-                今日已完成 {completedCount} / {todos.length}{" "}
-                项，继续保持清爽的节奏。
+                今日已完成 {completedCount} / {todos.length} 项，继续加油哦～。
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-3">
@@ -227,13 +323,7 @@ export function DashboardClient() {
           </CardContent>
         </Card>
 
-        {error ? (
-          <div className="rounded-2xl bg-destructive/10 px-4 py-3 text-sm text-destructive">
-            {error}
-          </div>
-        ) : null}
-
-        <div className="grid gap-6 lg:grid-cols-[1.3fr_0.9fr]">
+        <div className="grid gap-6">
           <Card className="bg-white/95">
             <CardHeader>
               <CardTitle>个人待办</CardTitle>
@@ -245,13 +335,14 @@ export function DashboardClient() {
               <form className="flex gap-3" onSubmit={handleAddTodo}>
                 <Input
                   onChange={(event) => setTodoInput(event.target.value)}
-                  placeholder="输入今天最重要的一件事"
+                  placeholder="请输入"
                   required
                   value={todoInput}
                 />
                 <Button
                   disabled={savingTodo || !todoInput.trim()}
                   type="submit"
+                  className="w-24"
                 >
                   {savingTodo ? <Spinner /> : "添加"}
                 </Button>
@@ -304,99 +395,6 @@ export function DashboardClient() {
               )}
             </CardContent>
           </Card>
-
-          <div className="space-y-6">
-            <Card className="bg-white/95">
-              <CardHeader>
-                <CardTitle>创建群组</CardTitle>
-                <CardDescription>
-                  生成邀请码后，朋友可快速加入并实时互相监督。
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form className="space-y-3" onSubmit={handleCreateGroup}>
-                  <Input
-                    onChange={(event) => setGroupName(event.target.value)}
-                    placeholder="例如：晨间打卡小队"
-                    required
-                    value={groupName}
-                  />
-                  <Button
-                    className="w-full"
-                    disabled={creatingGroup}
-                    type="submit"
-                  >
-                    {creatingGroup ? <Spinner /> : "创建群组"}
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-white/95">
-              <CardHeader>
-                <CardTitle>加入群组</CardTitle>
-                <CardDescription>
-                  输入邀请码即可加入已有监督小组。
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form className="space-y-3" onSubmit={handleJoinGroup}>
-                  <Input
-                    onChange={(event) =>
-                      setInviteCode(event.target.value.toUpperCase())
-                    }
-                    placeholder="输入邀请码"
-                    required
-                    value={inviteCode}
-                  />
-                  <Button
-                    className="w-full"
-                    disabled={joiningGroup}
-                    type="submit"
-                    variant="outline"
-                  >
-                    {joiningGroup ? <Spinner /> : "加入群组"}
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-white/95">
-              <CardHeader>
-                <CardTitle>我的群组</CardTitle>
-                <CardDescription>
-                  点击进入群组详情，查看所有成员当日进度。
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {groups.length === 0 ? (
-                  <div className="rounded-[24px] border border-dashed border-border bg-secondary/40 px-5 py-8 text-sm text-muted-foreground">
-                    还没有加入任何群组。
-                  </div>
-                ) : (
-                  groups.map((group) => (
-                    <Link
-                      className="block rounded-[24px] border border-border bg-secondary/35 px-4 py-4 transition hover:border-primary/40 hover:bg-primary/5"
-                      href={`/groups/${group.id}`}
-                      key={group.id}
-                    >
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="space-y-1">
-                          <p className="font-medium text-foreground">
-                            {group.name}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            邀请码 {group.inviteCode} · {group.memberCount} 人
-                          </p>
-                        </div>
-                        <Badge>进入</Badge>
-                      </div>
-                    </Link>
-                  ))
-                )}
-              </CardContent>
-            </Card>
-          </div>
         </div>
       </div>
     </div>
