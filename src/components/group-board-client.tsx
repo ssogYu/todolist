@@ -139,12 +139,6 @@ export function GroupBoardClient({ groupId }: { groupId: string }) {
               type="date"
               value={selectedDate}
             />
-            <Button
-              onClick={() => setSelectedDate(todayDateString())}
-              variant="outline"
-            >
-              回到今天
-            </Button>
           </div>
         </div>
 

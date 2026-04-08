@@ -318,12 +318,6 @@ export function DashboardClient() {
                 type="date"
                 value={selectedDate}
               />
-              <Button
-                onClick={() => setSelectedDate(todayDateString())}
-                variant="outline"
-              >
-                回到今天
-              </Button>
               <Button onClick={handleLogout} variant="ghost">
                 退出登录
               </Button>
@@ -334,10 +328,8 @@ export function DashboardClient() {
         <div className="grid gap-6">
           <Card className="bg-white/95">
             <CardHeader>
-              <CardTitle>个人待办</CardTitle>
-              <CardDescription>
-                支持按日期查看历史任务，勾选状态时会立即在界面中反馈。
-              </CardDescription>
+              <CardTitle>待办事项</CardTitle>
+              <CardDescription>支持按日期查看历史任务</CardDescription>
             </CardHeader>
             <CardContent className="space-y-5">
               <form className="space-y-3" onSubmit={handleAddTodo}>
@@ -345,36 +337,55 @@ export function DashboardClient() {
                   <Input
                     className="flex-1"
                     onChange={(event) => setTodoInput(event.target.value)}
-                    placeholder="请输入待办事项"
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" && todoInput.trim()) {
+                        event.preventDefault();
+                        const form = event.currentTarget.form;
+                        if (form) {
+                          const submitEvent = new SubmitEvent("submit", {
+                            bubbles: true,
+                            cancelable: true,
+                          });
+                          form.dispatchEvent(submitEvent);
+                        }
+                      }
+                    }}
+                    placeholder="输入待办事项，按回车 快速添加"
                     required
                     value={todoInput}
                   />
                   <Select
-                    className="sm:w-[140px]"
+                    className="sm:w-[130px] "
                     onChange={(event) =>
                       setSelectedCategory(
                         event.target.value as "WORK" | "PERSONAL",
                       )
                     }
                     options={[
-                      { value: "WORK", label: "工作" },
-                      { value: "PERSONAL", label: "个人" },
+                      { value: "WORK", label: "💼 工作" },
+                      { value: "PERSONAL", label: "🏠 个人" },
                     ]}
                     value={selectedCategory}
                   />
                   <Button
                     disabled={savingTodo || !todoInput.trim()}
                     type="submit"
-                    className="w-24"
+                    className="w-full sm:w-24"
                   >
-                    {savingTodo ? <Spinner /> : "添加"}
+                    {savingTodo ? <Spinner /> : "✨ 添加"}
                   </Button>
                 </div>
-                <Input
-                  onChange={(event) => setNoteInput(event.target.value)}
-                  placeholder="添加备注（可选）"
-                  value={noteInput}
-                />
+                <details className="group">
+                  <summary className="cursor-pointer text-sm text-muted-foreground hover:text-foreground transition-colors list-none">
+                    <span className="text-xs">+ 添加备注</span>
+                  </summary>
+                  <Input
+                    className="mt-2"
+                    onChange={(event) => setNoteInput(event.target.value)}
+                    placeholder="添加备注信息..."
+                    value={noteInput}
+                  />
+                </details>
               </form>
 
               {loading ? (
@@ -387,7 +398,7 @@ export function DashboardClient() {
                 </div>
               ) : (
                 <div className="grid gap-6 sm:grid-cols-2">
-                  {(["WORK", "PERSONAL"] as const).map((cat) => {
+                  {(["PERSONAL", "WORK"] as const).map((cat) => {
                     const filtered = todos.filter((t) => t.category === cat);
                     return (
                       <div key={cat} className="space-y-3">
@@ -405,12 +416,12 @@ export function DashboardClient() {
                           <div className="space-y-2">
                             {filtered.map((todo) => (
                               <div
-                                className="flex items-start gap-3 rounded-[24px] border border-border bg-secondary/35 px-4 py-4"
+                                className="group flex items-start gap-3 rounded-[24px] border border-border bg-secondary/35 px-4 py-4 transition-all duration-150 hover:border-destructive/30 hover:bg-destructive/5"
                                 key={todo.id}
                               >
                                 <input
                                   checked={todo.isDone}
-                                  className="mt-0.5 h-4 w-4 accent-[var(--primary)]"
+                                  className="mt-0.5 h-5 w-5 rounded-md border border-border accent-[var(--primary)] shadow-sm transition-all duration-150 hover:scale-[1.02]"
                                   onChange={(event) =>
                                     handleToggleTodo(
                                       todo.id,
@@ -431,16 +442,17 @@ export function DashboardClient() {
                                   </p>
                                   {todo.note && (
                                     <p className="text-xs text-muted-foreground">
-                                      {todo.note}
+                                      📝 {todo.note}
                                     </p>
                                   )}
                                 </div>
                                 <Button
+                                  className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 p-0"
                                   onClick={() => handleDeleteTodo(todo.id)}
                                   size="sm"
                                   variant="ghost"
                                 >
-                                  删除
+                                  🗑️
                                 </Button>
                               </div>
                             ))}
