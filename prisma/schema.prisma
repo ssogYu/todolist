@@ -37,9 +37,16 @@ model GroupMember {
   @@index([groupId])
 }
 
+enum Category {
+  WORK
+  PERSONAL
+}
+
 model Todo {
   id         String   @id @default(cuid())
   content    String
+  note       String?
+  category   Category @default(WORK)
   isDone     Boolean  @default(false)
   targetDate DateTime @db.Date
   userId     String

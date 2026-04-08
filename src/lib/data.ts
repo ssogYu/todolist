@@ -25,6 +25,8 @@ type GroupBoardRecord = {
       todos: Array<{
         id: string;
         content: string;
+        note: string | null;
+        category: "WORK" | "PERSONAL";
         isDone: boolean;
         targetDate: Date;
         userId: string;
@@ -38,6 +40,8 @@ type GroupBoardRecord = {
 export function serializeTodo(todo: {
   id: string;
   content: string;
+  note: string | null;
+  category: "WORK" | "PERSONAL";
   isDone: boolean;
   targetDate: Date;
   userId: string;
@@ -47,6 +51,8 @@ export function serializeTodo(todo: {
   const serialized: TodoItem = {
     id: todo.id,
     content: todo.content,
+    note: todo.note,
+    category: todo.category,
     isDone: todo.isDone,
     targetDate: toDateString(todo.targetDate),
     userId: todo.userId,

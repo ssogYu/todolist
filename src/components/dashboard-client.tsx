@@ -22,6 +22,7 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
 import { clearStoredToken, apiFetch } from "@/lib/api-client";
 import { formatDisplayDate, todayDateString } from "@/lib/date";
@@ -45,6 +46,10 @@ export function DashboardClient() {
   const [todos, setTodos] = useState<TodoItem[]>([]);
   const [groups, setGroups] = useState<GroupListItem[]>([]);
   const [todoInput, setTodoInput] = useState("");
+  const [noteInput, setNoteInput] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<"WORK" | "PERSONAL">(
+    "WORK",
+  );
   const [groupName, setGroupName] = useState("");
   const [inviteCode, setInviteCode] = useState("");
   const [error, setError] = useState<string | null>();
@@ -92,12 +97,15 @@ export function DashboardClient() {
         method: "POST",
         body: JSON.stringify({
           content: todoInput,
+          note: noteInput || undefined,
+          category: selectedCategory,
           targetDate: selectedDate,
         }),
       });
 
       setTodos((current) => [...current, response.todo]);
       setTodoInput("");
+      setNoteInput("");
     } catch (submitError) {
       setError(
         submitError instanceof Error ? submitError.message : "添加任务失败",
@@ -332,20 +340,41 @@ export function DashboardClient() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-5">
-              <form className="flex gap-3" onSubmit={handleAddTodo}>
+              <form className="space-y-3" onSubmit={handleAddTodo}>
+                <div className="flex flex-col gap-3 sm:flex-row">
+                  <Input
+                    className="flex-1"
+                    onChange={(event) => setTodoInput(event.target.value)}
+                    placeholder="请输入待办事项"
+                    required
+                    value={todoInput}
+                  />
+                  <Select
+                    className="sm:w-[140px]"
+                    onChange={(event) =>
+                      setSelectedCategory(
+                        event.target.value as "WORK" | "PERSONAL",
+                      )
+                    }
+                    options={[
+                      { value: "WORK", label: "工作" },
+                      { value: "PERSONAL", label: "个人" },
+                    ]}
+                    value={selectedCategory}
+                  />
+                  <Button
+                    disabled={savingTodo || !todoInput.trim()}
+                    type="submit"
+                    className="w-24"
+                  >
+                    {savingTodo ? <Spinner /> : "添加"}
+                  </Button>
+                </div>
                 <Input
-                  onChange={(event) => setTodoInput(event.target.value)}
-                  placeholder="请输入"
-                  required
-                  value={todoInput}
+                  onChange={(event) => setNoteInput(event.target.value)}
+                  placeholder="添加备注（可选）"
+                  value={noteInput}
                 />
-                <Button
-                  disabled={savingTodo || !todoInput.trim()}
-                  type="submit"
-                  className="w-24"
-                >
-                  {savingTodo ? <Spinner /> : "添加"}
-                </Button>
               </form>
 
               {loading ? (
@@ -357,40 +386,69 @@ export function DashboardClient() {
                   这一天还没有待办，先安排一个小目标吧。
                 </div>
               ) : (
-                <div className="space-y-3">
-                  {todos.map((todo) => (
-                    <div
-                      className="flex items-center gap-3 rounded-[24px] border border-border bg-secondary/35 px-4 py-4"
-                      key={todo.id}
-                    >
-                      <input
-                        checked={todo.isDone}
-                        className="h-4 w-4 accent-[var(--primary)]"
-                        onChange={(event) =>
-                          handleToggleTodo(todo.id, event.target.checked)
-                        }
-                        type="checkbox"
-                      />
-                      <div className="min-w-0 flex-1">
-                        <p
-                          className={
-                            todo.isDone
-                              ? "text-sm text-muted-foreground line-through"
-                              : "text-sm text-foreground"
-                          }
-                        >
-                          {todo.content}
-                        </p>
+                <div className="grid gap-6 sm:grid-cols-2">
+                  {(["WORK", "PERSONAL"] as const).map((cat) => {
+                    const filtered = todos.filter((t) => t.category === cat);
+                    return (
+                      <div key={cat} className="space-y-3">
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-sm font-medium">
+                            {cat === "WORK" ? "工作" : "个人"}
+                          </h3>
+                          <Badge variant="secondary">{filtered.length}</Badge>
+                        </div>
+                        {filtered.length === 0 ? (
+                          <div className="rounded-[24px] border border-dashed border-border bg-secondary/40 px-5 py-8 text-sm text-muted-foreground">
+                            暂无{cat === "WORK" ? "工作" : "个人"}待办
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            {filtered.map((todo) => (
+                              <div
+                                className="flex items-start gap-3 rounded-[24px] border border-border bg-secondary/35 px-4 py-4"
+                                key={todo.id}
+                              >
+                                <input
+                                  checked={todo.isDone}
+                                  className="mt-0.5 h-4 w-4 accent-[var(--primary)]"
+                                  onChange={(event) =>
+                                    handleToggleTodo(
+                                      todo.id,
+                                      event.target.checked,
+                                    )
+                                  }
+                                  type="checkbox"
+                                />
+                                <div className="min-w-0 flex-1 space-y-1">
+                                  <p
+                                    className={
+                                      todo.isDone
+                                        ? "text-sm text-muted-foreground line-through"
+                                        : "text-sm text-foreground"
+                                    }
+                                  >
+                                    {todo.content}
+                                  </p>
+                                  {todo.note && (
+                                    <p className="text-xs text-muted-foreground">
+                                      {todo.note}
+                                    </p>
+                                  )}
+                                </div>
+                                <Button
+                                  onClick={() => handleDeleteTodo(todo.id)}
+                                  size="sm"
+                                  variant="ghost"
+                                >
+                                  删除
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
-                      <Button
-                        onClick={() => handleDeleteTodo(todo.id)}
-                        size="sm"
-                        variant="ghost"
-                      >
-                        删除
-                      </Button>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </CardContent>

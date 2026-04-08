@@ -27,8 +27,14 @@ export async function PATCH(
       where: { id: todoId },
       data: {
         ...(payload.content ? { content: payload.content } : {}),
-        ...(payload.targetDate ? { targetDate: toDateOnly(payload.targetDate) } : {}),
-        ...(typeof payload.isDone === "boolean" ? { isDone: payload.isDone } : {}),
+        ...(payload.note !== undefined ? { note: payload.note ?? null } : {}),
+        ...(payload.category ? { category: payload.category } : {}),
+        ...(payload.targetDate
+          ? { targetDate: toDateOnly(payload.targetDate) }
+          : {}),
+        ...(typeof payload.isDone === "boolean"
+          ? { isDone: payload.isDone }
+          : {}),
       },
     });
 

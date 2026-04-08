@@ -7,12 +7,16 @@ export const authSchema = z.object({
 
 export const todoCreateSchema = z.object({
   content: z.string().trim().min(1).max(140),
+  note: z.string().trim().max(500).optional(),
+  category: z.enum(["WORK", "PERSONAL"]).default("WORK"),
   targetDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
 });
 
 export const todoPatchSchema = z
   .object({
     content: z.string().trim().min(1).max(140).optional(),
+    note: z.string().trim().max(500).optional(),
+    category: z.enum(["WORK", "PERSONAL"]).optional(),
     isDone: z.boolean().optional(),
     targetDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   })

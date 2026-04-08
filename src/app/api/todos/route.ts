@@ -38,6 +38,8 @@ export async function POST(request: NextRequest) {
     const todo = await prisma.todo.create({
       data: {
         content: payload.content,
+        note: payload.note ?? null,
+        category: payload.category,
         targetDate: toDateOnly(payload.targetDate),
         userId: user.id,
       },

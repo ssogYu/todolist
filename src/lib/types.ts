@@ -11,6 +11,8 @@ export type AuthResponse = {
 export type TodoItem = {
   id: string;
   content: string;
+  note: string | null;
+  category: "WORK" | "PERSONAL";
   isDone: boolean;
   targetDate: string;
   userId: string;
