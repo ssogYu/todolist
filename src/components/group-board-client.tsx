@@ -388,11 +388,20 @@ export function GroupBoardClient({ groupId }: { groupId: string }) {
                                   </svg>
                                 )}
                               </div>
-                              <p
-                                className={`text-sm flex-1 ${todo.isDone ? "text-muted-foreground line-through" : "text-foreground"}`}
-                              >
-                                {todo.content}
-                              </p>
+                              <div className="flex-1 min-w-0 flex items-start justify-between gap-2">
+                                <p
+                                  className={`text-sm flex-1 ${todo.isDone ? "text-muted-foreground line-through" : "text-foreground"}`}
+                                >
+                                  {todo.content}
+                                </p>
+                                <span
+                                  className={`inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium flex-shrink-0 ${todo.category === "WORK" ? "bg-blue-100 text-blue-700" : "bg-pink-100 text-pink-700"}`}
+                                >
+                                  {todo.category === "WORK"
+                                    ? "💼 工作"
+                                    : "🏠 个人"}
+                                </span>
+                              </div>
                             </div>
                           ))
                         )}
