@@ -72,6 +72,19 @@ export function DashboardClient({
   const [editInput, setEditInput] = useState("");
   const [editNoteInput, setEditNoteInput] = useState("");
 
+  const [greeting, setGreeting] = useState("你好");
+
+  useEffect(() => {
+    const hour = new Date().getHours();
+    if (hour >= 5 && hour < 12) {
+      setGreeting("早上好");
+    } else if (hour >= 12 && hour < 18) {
+      setGreeting("下午好");
+    } else {
+      setGreeting("晚上好");
+    }
+  }, []);
+
   const motivationalQuotes = [
     "专注当下，一步一步完成目标",
     "小步快跑，持续迭代",
@@ -532,7 +545,7 @@ export function DashboardClient({
               Todo List
             </div> */}
             <h1 className="text-4xl font-bold tracking-tight lg:text-5xl">
-              <span className="text-foreground/90">你好，</span>
+              <span className="text-foreground/90">{greeting}，</span>
               <span className="bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
                 {user?.username}
               </span>
