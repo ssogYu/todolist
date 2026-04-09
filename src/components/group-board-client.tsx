@@ -349,7 +349,10 @@ export function GroupBoardClient({ groupId }: { groupId: string }) {
                         </div>
                       )}
 
-                      <div className="space-y-2">
+                      <div
+                        className="space-y-2 overflow-y-auto"
+                        style={{ maxHeight: "500px" }}
+                      >
                         {member.todos.length === 0 ? (
                           <div className="rounded-xl border border-dashed border-border/50 bg-secondary/10 py-6 text-center">
                             <p className="text-xs text-muted-foreground">
@@ -357,7 +360,7 @@ export function GroupBoardClient({ groupId }: { groupId: string }) {
                             </p>
                           </div>
                         ) : (
-                          member.todos.slice(0, 3).map((todo) => (
+                          member.todos.map((todo) => (
                             <div
                               className="flex items-start gap-2.5 rounded-lg bg-secondary/30 px-3 py-2.5 transition-colors group-hover:bg-secondary/40"
                               key={todo.id}
@@ -392,11 +395,6 @@ export function GroupBoardClient({ groupId }: { groupId: string }) {
                               </p>
                             </div>
                           ))
-                        )}
-                        {member.todos.length > 3 && (
-                          <div className="text-center text-xs text-muted-foreground py-1">
-                            + 还有 {member.todos.length - 3} 项
-                          </div>
                         )}
                       </div>
                     </div>

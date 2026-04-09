@@ -635,7 +635,7 @@ export function DashboardClient({
                           </p>
                         </div>
                       ) : (
-                        <div className="space-y-2">
+                        <div className="space-y-2 overflow-y-auto" style={{ maxHeight: "500px" }}>
                           {filtered.map((todo) => (
                             <div
                               className="group flex items-start gap-3 rounded-xl border border-border/50 bg-card/80 p-4 transition-all duration-200 hover:border-primary/30 hover:bg-card hover:shadow-md hover:shadow-primary/5"
