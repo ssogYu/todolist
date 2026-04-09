@@ -1,0 +1,4 @@
+services:
+  web:
+    image: ${DOCKER_IMAGE}
+    build: null

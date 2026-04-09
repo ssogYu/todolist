@@ -17,7 +17,9 @@ services:
       retries: 10
 
   web:
-    image: ${DOCKER_IMAGE}
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: spring-todo-web
     depends_on:
       db:
