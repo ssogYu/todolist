@@ -24,6 +24,11 @@ export const todoPatchSchema = z
     message: "缺少更新字段",
   });
 
+export const expiredTodoActionSchema = z.object({
+  action: z.enum(["moveToToday", "delete"]),
+  todoIds: z.array(z.string().trim().min(1)).min(1),
+});
+
 export const groupSchema = z.object({
   name: z.string().trim().min(2).max(32),
 });

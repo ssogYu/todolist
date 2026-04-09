@@ -1,15 +1,111 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { AuthGuard } from "@/components/auth-guard";
 import { DashboardClient } from "@/components/dashboard-client";
 import { SakuraPetals } from "@/components/sakura-petals";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Spinner } from "@/components/ui/spinner";
 import { Celebration } from "@/components/celebration";
+import { apiFetch } from "@/lib/api-client";
 import type { TodoItem } from "@/lib/types";
+
+type ExpiredTodosResponse = {
+  expiredTodos: TodoItem[];
+};
 
 export default function DashboardPage() {
   const [todos, setTodos] = useState<TodoItem[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [expiredTodos, setExpiredTodos] = useState<TodoItem[]>([]);
+  const [expiredLoading, setExpiredLoading] = useState(true);
+  const [expiredPanelOpen, setExpiredPanelOpen] = useState(false);
+  const [expiredActionLoading, setExpiredActionLoading] = useState(false);
+  const [expiredError, setExpiredError] = useState<string | null>(null);
+
+  const expiredCountLabel = useMemo(() => {
+    if (expiredTodos.length === 1) {
+      return "有 1 条过期待处理任务";
+    }
+
+    return `有 ${expiredTodos.length} 条过期待处理任务`;
+  }, [expiredTodos.length]);
+
+  const getOverdueDays = useCallback((targetDate: string) => {
+    const today = new Date();
+    const todayDate = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate(),
+    );
+    const todoDate = new Date(`${targetDate}T12:00:00`);
+    const todoDay = new Date(
+      todoDate.getFullYear(),
+      todoDate.getMonth(),
+      todoDate.getDate(),
+    );
+    const diff = todayDate.getTime() - todoDay.getTime();
+
+    return Math.max(1, Math.floor(diff / 86400000));
+  }, []);
+
+  const loadExpiredTodos = useCallback(async () => {
+    setExpiredLoading(true);
+    setExpiredError(null);
+
+    try {
+      const data = await apiFetch<ExpiredTodosResponse>("/api/todos/expired");
+      setExpiredTodos(data.expiredTodos);
+    } catch (error) {
+      setExpiredError(
+        error instanceof Error ? error.message : "加载未完成任务失败",
+      );
+    } finally {
+      setExpiredLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadExpiredTodos();
+  }, [loadExpiredTodos]);
+
+  async function handleExpiredAction(
+    action: "moveToToday" | "delete",
+    todoIds: string[],
+  ) {
+    if (todoIds.length === 0) {
+      return;
+    }
+
+    setExpiredActionLoading(true);
+    setExpiredError(null);
+
+    try {
+      await apiFetch("/api/todos/expired", {
+        method: "POST",
+        body: JSON.stringify({ action, todoIds }),
+      });
+      setExpiredTodos((current) =>
+        current.filter((todo) => !todoIds.includes(todo.id)),
+      );
+      setRefreshTrigger((current) => current + 1);
+    } catch (error) {
+      setExpiredError(
+        error instanceof Error ? error.message : "处理未完成任务失败",
+      );
+    } finally {
+      setExpiredActionLoading(false);
+    }
+  }
 
   return (
     <AuthGuard>
@@ -18,8 +114,105 @@ export default function DashboardPage() {
         todos={todos}
         setTodos={setTodos}
         loading={dataLoading}
+        refreshTrigger={refreshTrigger}
+        expiredTodoCount={expiredTodos.length}
+        onOpenExpiredAssistant={() => setExpiredPanelOpen(true)}
         setLoading={setDataLoading}
       />
+      {!expiredLoading && expiredTodos.length > 0 && (
+        <Dialog open={expiredPanelOpen} onOpenChange={setExpiredPanelOpen}>
+          <DialogContent className="max-h-[85vh] overflow-hidden sm:max-w-2xl">
+            <DialogClose />
+            <DialogHeader>
+              <DialogTitle>{expiredCountLabel}</DialogTitle>
+              <DialogDescription>
+                支持放弃删除或加入今天，可单条和批量处理。
+              </DialogDescription>
+            </DialogHeader>
+
+            {expiredError && (
+              <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-600">
+                {expiredError}
+              </div>
+            )}
+
+            {expiredTodos.length > 1 && (
+              <div className="flex items-center gap-2">
+                <Button
+                  className="rounded-xl bg-amber-500 text-white hover:bg-amber-500/90"
+                  disabled={expiredActionLoading}
+                  onClick={() =>
+                    handleExpiredAction(
+                      "moveToToday",
+                      expiredTodos.map((todo) => todo.id),
+                    )
+                  }
+                  size="sm"
+                  type="button"
+                >
+                  {expiredActionLoading ? <Spinner /> : "全部加入今天"}
+                </Button>
+                <Button
+                  className="rounded-xl"
+                  disabled={expiredActionLoading}
+                  onClick={() =>
+                    handleExpiredAction(
+                      "delete",
+                      expiredTodos.map((todo) => todo.id),
+                    )
+                  }
+                  size="sm"
+                  type="button"
+                  variant="outline"
+                >
+                  {expiredActionLoading ? <Spinner /> : "全部放弃"}
+                </Button>
+              </div>
+            )}
+
+            <div className="mt-2 max-h-[55vh] space-y-2 overflow-y-auto pr-1">
+              {expiredTodos.map((todo) => (
+                <div
+                  className="group flex items-start gap-3 rounded-xl border border-amber-200/70 bg-amber-50/70 p-4"
+                  key={todo.id}
+                >
+                  <div className="min-w-0 flex-1 space-y-2">
+                    <div className="flex flex-wrap items-center gap-2 text-xs">
+                      <span className="rounded-full bg-amber-100 px-2.5 py-1 text-amber-700">
+                        {todo.category === "WORK" ? "💼 工作" : "🏠 个人"}
+                      </span>
+                      <span className="rounded-full bg-orange-100 px-2.5 py-1 text-orange-700">
+                        已过期 {getOverdueDays(todo.targetDate)} 天
+                      </span>
+                    </div>
+                    <p className="text-sm text-slate-900">{todo.content}</p>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <button
+                      className="flex h-8 items-center justify-center rounded-lg px-3 text-sm text-amber-800 transition-all duration-200 hover:bg-amber-100 hover:text-amber-950"
+                      disabled={expiredActionLoading}
+                      onClick={() =>
+                        handleExpiredAction("moveToToday", [todo.id])
+                      }
+                      type="button"
+                    >
+                      {expiredActionLoading ? <Spinner /> : "加入今天"}
+                    </button>
+                    <button
+                      className="flex h-8 items-center justify-center rounded-lg px-3 text-sm text-rose-700 transition-all duration-200 hover:bg-rose-50 hover:text-rose-800"
+                      disabled={expiredActionLoading}
+                      onClick={() => handleExpiredAction("delete", [todo.id])}
+                      type="button"
+                    >
+                      {expiredActionLoading ? <Spinner /> : "放弃"}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
       <Celebration todos={todos} loading={dataLoading} />
     </AuthGuard>
   );

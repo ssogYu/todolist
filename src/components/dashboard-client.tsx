@@ -34,14 +34,11 @@ type GroupMutationResponse = {
 interface DashboardClientProps {
   todos: TodoItem[];
   setTodos: React.Dispatch<React.SetStateAction<TodoItem[]>>;
-  setLoading: React.Dispatch<React.SetStateAction<boolean>>;
-}
-
-interface DashboardClientProps {
-  todos: TodoItem[];
-  setTodos: React.Dispatch<React.SetStateAction<TodoItem[]>>;
   loading: boolean;
   setLoading: React.Dispatch<React.SetStateAction<boolean>>;
+  refreshTrigger?: number;
+  expiredTodoCount?: number;
+  onOpenExpiredAssistant?: () => void;
 }
 
 export function DashboardClient({
@@ -49,6 +46,9 @@ export function DashboardClient({
   setTodos,
   loading,
   setLoading,
+  refreshTrigger,
+  expiredTodoCount = 0,
+  onOpenExpiredAssistant,
 }: DashboardClientProps) {
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
@@ -144,7 +144,7 @@ export function DashboardClient({
       setQuoteIndex((prev) => (prev + 1) % motivationalQuotes.length);
     }, 8000);
     return () => clearInterval(interval);
-  }, []);
+  }, [motivationalQuotes.length]);
 
   const completedCount = useMemo(
     () => todos.filter((todo) => todo.isDone).length,
@@ -181,11 +181,11 @@ export function DashboardClient({
     } finally {
       setLoading(false);
     }
-  }, [selectedDate]);
+  }, [selectedDate, setLoading, setTodos]);
 
   useEffect(() => {
     void loadDashboard();
-  }, [loadDashboard]);
+  }, [loadDashboard, refreshTrigger]);
 
   async function handleAddTodo(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -589,6 +589,19 @@ export function DashboardClient({
           </div>
 
           <div className="relative group">
+            {expiredTodoCount > 0 && onOpenExpiredAssistant && (
+              <button
+                className="absolute -right-2 -top-2 z-20 flex h-7 w-7 items-center justify-center rounded-full border border-amber-200/90 bg-[linear-gradient(135deg,#f59e0b,#f97316)] text-[11px] text-white shadow-[0_8px_20px_rgba(249,115,22,0.4)] transition-all duration-300 hover:scale-105 hover:shadow-[0_10px_24px_rgba(249,115,22,0.5)]"
+                onClick={onOpenExpiredAssistant}
+                type="button"
+              >
+                <span className="absolute -inset-1 -z-10 animate-ping rounded-full bg-amber-400/35" />
+                <span>!</span>
+                <span className="absolute -right-1.5 -top-1.5 inline-flex min-h-4 min-w-4 items-center justify-center rounded-full bg-rose-600 px-1 text-[10px] font-semibold leading-none text-white">
+                  {expiredTodoCount > 99 ? "99+" : expiredTodoCount}
+                </span>
+              </button>
+            )}
             <div className="flex items-center gap-2.5 rounded-full bg-card/80 backdrop-blur-sm border border-border/50 px-4 py-2 cursor-pointer transition-all duration-300 hover:bg-card hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5">
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary/70 text-sm text-primary-foreground font-semibold shadow-sm">
                 {user?.username?.charAt(0).toUpperCase()}
@@ -647,6 +660,12 @@ export function DashboardClient({
                   className="h-full rounded-full bg-gradient-to-r from-primary to-primary/60 transition-all duration-500 ease-out"
                   style={{ width: `${progressPercent}%` }}
                 />
+              </div>
+            )}
+
+            {error && (
+              <div className="mb-6 rounded-2xl border border-rose-200/70 bg-rose-50/80 px-4 py-3 text-sm text-rose-600">
+                {error}
               </div>
             )}
 
