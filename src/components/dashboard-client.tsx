@@ -56,6 +56,7 @@ export function DashboardClient({
   const [selectedDate, setSelectedDate] = useState(todayDateString());
   const [groups, setGroups] = useState<GroupListItem[]>([]);
   const [todoInput, setTodoInput] = useState("");
+  const [isComposing, setIsComposing] = useState(false);
   const [noteInput, setNoteInput] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<"WORK" | "PERSONAL">(
     "WORK",
@@ -522,8 +523,14 @@ export function DashboardClient({
                   <input
                     className="h-12 w-full rounded-xl border border-border/50 bg-secondary/20 pl-12 pr-4 text-sm transition-all duration-200 placeholder:text-muted-foreground/50 focus:border-primary/50 focus:bg-secondary/30 focus:outline-none focus:ring-2 focus:ring-primary/20"
                     onChange={(event) => setTodoInput(event.target.value)}
+                    onCompositionStart={() => setIsComposing(true)}
+                    onCompositionEnd={() => setIsComposing(false)}
                     onKeyDown={(event) => {
-                      if (event.key === "Enter" && todoInput.trim()) {
+                      if (
+                        event.key === "Enter" &&
+                        todoInput.trim() &&
+                        !isComposing
+                      ) {
                         event.preventDefault();
                         const form = event.currentTarget.form;
                         if (form) {
