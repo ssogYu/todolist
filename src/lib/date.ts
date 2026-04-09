@@ -6,6 +6,19 @@ export function todayDateString() {
   return format(new Date(), DATE_FORMAT);
 }
 
+export function isBeforeToday(value: string) {
+  return value < todayDateString();
+}
+
+export function assertNotBeforeToday(
+  value: string,
+  message = "今日之前的任务不支持创建或更新",
+) {
+  if (isBeforeToday(value)) {
+    throw new Error(message);
+  }
+}
+
 export function toDateOnly(value: string) {
   const parsed = parseISO(`${value}T12:00:00.000Z`);
 

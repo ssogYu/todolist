@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { requireAuthUser } from "@/lib/auth";
 import { notifyUserGroups, serializeTodo } from "@/lib/data";
-import { toDateOnly } from "@/lib/date";
+import { assertNotBeforeToday, toDateOnly, toDateString } from "@/lib/date";
 import { prisma } from "@/lib/prisma";
 import { todoPatchSchema } from "@/lib/validation";
 
@@ -16,12 +16,17 @@ export async function PATCH(
     const { todoId } = await params;
     const existingTodo = await prisma.todo.findUnique({
       where: { id: todoId },
-      select: { id: true, userId: true },
+      select: { id: true, userId: true, targetDate: true },
     });
 
     if (!existingTodo || existingTodo.userId !== user.id) {
       return NextResponse.json({ message: "待办不存在" }, { status: 404 });
     }
+
+    assertNotBeforeToday(
+      payload.targetDate ?? toDateString(existingTodo.targetDate),
+      "今日之前的日期不能更新任务",
+    );
 
     const todo = await prisma.todo.update({
       where: { id: todoId },

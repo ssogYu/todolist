@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { requireAuthUser } from "@/lib/auth";
 import { notifyUserGroups, serializeTodo } from "@/lib/data";
-import { toDateOnly, todayDateString } from "@/lib/date";
+import { assertNotBeforeToday, toDateOnly, todayDateString } from "@/lib/date";
 import { prisma } from "@/lib/prisma";
 import { todoCreateSchema } from "@/lib/validation";
 
@@ -35,6 +35,7 @@ export async function POST(request: NextRequest) {
   try {
     const user = await requireAuthUser(request);
     const payload = todoCreateSchema.parse(await request.json());
+    assertNotBeforeToday(payload.targetDate, "今日之前的日期不能创建任务");
     const todo = await prisma.todo.create({
       data: {
         content: payload.content,

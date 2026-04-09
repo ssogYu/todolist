@@ -18,7 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
 import { clearStoredToken, apiFetch } from "@/lib/api-client";
-import { todayDateString } from "@/lib/date";
+import { isBeforeToday, todayDateString } from "@/lib/date";
 import type {
   GroupListItem,
   GroupsResponse,
@@ -155,6 +155,14 @@ export function DashboardClient({
     if (todos.length === 0) return 0;
     return Math.round((completedCount / todos.length) * 100);
   }, [completedCount, todos.length]);
+  const isPastSelectedDate = useMemo(
+    () => isBeforeToday(selectedDate),
+    [selectedDate],
+  );
+  const operationLockedMessage = "今日之前的日期仅支持查看，不能新增或修改任务";
+  const editingTodoLocked = editingTodo
+    ? isBeforeToday(editingTodo.targetDate)
+    : false;
 
   const loadDashboard = useCallback(async () => {
     setLoading(true);
@@ -181,6 +189,10 @@ export function DashboardClient({
 
   async function handleAddTodo(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (isPastSelectedDate) {
+      setError(operationLockedMessage);
+      return;
+    }
     setSavingTodo(true);
     setError(null);
 
@@ -208,6 +220,11 @@ export function DashboardClient({
   }
 
   async function handleToggleTodo(todoId: string, isDone: boolean) {
+    const currentTodo = todos.find((todo) => todo.id === todoId);
+    if (!currentTodo || isBeforeToday(currentTodo.targetDate)) {
+      setError(operationLockedMessage);
+      return;
+    }
     const previousTodos = todos;
 
     setTodos((current) =>
@@ -232,6 +249,12 @@ export function DashboardClient({
     content: string,
     note?: string | null,
   ) {
+    const currentTodo = todos.find((todo) => todo.id === todoId);
+    if (!currentTodo || isBeforeToday(currentTodo.targetDate)) {
+      setError(operationLockedMessage);
+      setEditingTodo(null);
+      return;
+    }
     const previousTodos = todos;
 
     setTodos((current) =>
@@ -486,7 +509,11 @@ export function DashboardClient({
             <DialogTitle className="text-xl font-semibold">
               编辑任务
             </DialogTitle>
-            <DialogDescription>修改任务内容和备注</DialogDescription>
+            <DialogDescription>
+              {editingTodoLocked
+                ? operationLockedMessage
+                : "修改任务内容和备注"}
+            </DialogDescription>
           </DialogHeader>
           <form
             className="space-y-4"
@@ -507,13 +534,15 @@ export function DashboardClient({
                 onChange={(e) => setEditInput(e.target.value)}
                 placeholder="任务内容"
                 required
-                className="rounded-xl"
+                className="rounded-xl disabled:cursor-not-allowed disabled:opacity-60"
+                disabled={editingTodoLocked}
               />
               <textarea
                 value={editNoteInput}
                 onChange={(e) => setEditNoteInput(e.target.value)}
                 placeholder="备注（可选）"
-                className="w-full rounded-xl border border-border/50 bg-secondary/20 px-4 py-3 text-sm resize-none min-h-[80px]"
+                className="w-full rounded-xl border border-border/50 bg-secondary/20 px-4 py-3 text-sm resize-none min-h-[80px] disabled:cursor-not-allowed disabled:opacity-60"
+                disabled={editingTodoLocked}
               />
             </div>
             <div className="flex gap-2">
@@ -528,7 +557,7 @@ export function DashboardClient({
               <Button
                 type="submit"
                 className="flex-1 rounded-xl bg-primary hover:bg-primary/90"
-                disabled={!editInput.trim()}
+                disabled={editingTodoLocked || !editInput.trim()}
               >
                 保存
               </Button>
@@ -625,7 +654,7 @@ export function DashboardClient({
               <div className="flex flex-col gap-3 sm:flex-row">
                 <div className="relative flex-1">
                   <input
-                    className="h-12 w-full rounded-xl border border-border/50 bg-secondary/20 pl-12 pr-4 text-sm transition-all duration-200 placeholder:text-muted-foreground/50 focus:border-primary/50 focus:bg-secondary/30 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                    className="h-12 w-full rounded-xl border border-border/50 bg-secondary/20 pl-12 pr-4 text-sm transition-all duration-200 placeholder:text-muted-foreground/50 focus:border-primary/50 focus:bg-secondary/30 focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-60"
                     onChange={(event) => setTodoInput(event.target.value)}
                     onCompositionStart={() => setIsComposing(true)}
                     onCompositionEnd={() => setIsComposing(false)}
@@ -649,6 +678,7 @@ export function DashboardClient({
                     placeholder="添加新的待办..."
                     required
                     value={todoInput}
+                    disabled={isPastSelectedDate}
                   />
                   <svg
                     className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/50"
@@ -676,9 +706,12 @@ export function DashboardClient({
                     { value: "WORK", label: "💼 工作" },
                   ]}
                   value={selectedCategory}
+                  disabled={isPastSelectedDate}
                 />
                 <Button
-                  disabled={savingTodo || !todoInput.trim()}
+                  disabled={
+                    isPastSelectedDate || savingTodo || !todoInput.trim()
+                  }
                   type="submit"
                   className="h-12 px-6 rounded-xl bg-primary hover:bg-primary/90 transition-all duration-200 shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30"
                 >
@@ -690,10 +723,11 @@ export function DashboardClient({
                   <span className="text-xs">+ 添加备注</span>
                 </summary>
                 <input
-                  className="mt-2 h-10 w-full rounded-lg border border-border/50 bg-secondary/20 px-4 text-sm transition-all duration-200 focus:border-primary/50 focus:bg-secondary/30 focus:outline-none"
+                  className="mt-2 h-10 w-full rounded-lg border border-border/50 bg-secondary/20 px-4 text-sm transition-all duration-200 focus:border-primary/50 focus:bg-secondary/30 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60"
                   onChange={(event) => setNoteInput(event.target.value)}
                   placeholder="添加备注信息..."
                   value={noteInput}
+                  disabled={isPastSelectedDate}
                 />
               </details>
             </form>
@@ -743,97 +777,117 @@ export function DashboardClient({
                           className="space-y-2 overflow-y-auto"
                           style={{ maxHeight: "500px" }}
                         >
-                          {filtered.map((todo) => (
-                            <div
-                              className="group flex items-start gap-3 rounded-xl border border-border/50 bg-card/80 p-4 transition-all duration-200 hover:border-primary/30 hover:bg-card hover:shadow-md hover:shadow-primary/5"
-                              key={todo.id}
-                            >
-                              <label className="relative flex items-center justify-center">
-                                <input
-                                  checked={todo.isDone}
-                                  className="peer h-5 w-5 cursor-pointer appearance-none rounded-md border-2 border-primary/30 transition-all duration-200 checked:border-primary checked:bg-primary checked:shadow-sm checked:shadow-primary/30 hover:border-primary/50 peer-hover:border-primary"
-                                  onChange={(event) =>
-                                    handleToggleTodo(
-                                      todo.id,
-                                      event.target.checked,
-                                    )
-                                  }
-                                  type="checkbox"
-                                />
-                                <svg
-                                  className="pointer-events-none absolute opacity-0 peer-checked:opacity-100 transition-opacity"
-                                  fill="none"
-                                  stroke="white"
-                                  viewBox="0 0 24 24"
-                                  strokeWidth={3}
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    d="M5 13l4 4L19 7"
+                          {filtered.map((todo) => {
+                            const isTodoLocked = isBeforeToday(todo.targetDate);
+                            return (
+                              <div
+                                className={`group flex items-start gap-3 rounded-xl border border-border/50 bg-card/80 p-4 transition-all duration-200 ${
+                                  isTodoLocked
+                                    ? "opacity-75"
+                                    : "hover:border-primary/30 hover:bg-card hover:shadow-md hover:shadow-primary/5"
+                                }`}
+                                key={todo.id}
+                              >
+                                <label className="relative flex items-center justify-center">
+                                  <input
+                                    checked={todo.isDone}
+                                    className="peer h-5 w-5 cursor-pointer appearance-none rounded-md border-2 border-primary/30 transition-all duration-200 checked:border-primary checked:bg-primary checked:shadow-sm checked:shadow-primary/30 hover:border-primary/50 peer-hover:border-primary disabled:cursor-not-allowed disabled:border-border disabled:bg-secondary/40 disabled:opacity-60"
+                                    onChange={(event) =>
+                                      handleToggleTodo(
+                                        todo.id,
+                                        event.target.checked,
+                                      )
+                                    }
+                                    type="checkbox"
+                                    disabled={isTodoLocked}
                                   />
-                                </svg>
-                              </label>
-                              <div className="min-w-0 flex-1 space-y-1">
-                                <p
-                                  className={
-                                    todo.isDone
-                                      ? "text-sm text-muted-foreground line-through decoration-primary/30"
-                                      : "text-sm text-foreground"
-                                  }
-                                >
-                                  {todo.content}
-                                </p>
-                                {todo.note && (
-                                  <p className="flex items-center gap-1 text-xs text-muted-foreground">
-                                    <span>📝</span> {todo.note}
+                                  <svg
+                                    className="pointer-events-none absolute opacity-0 peer-checked:opacity-100 transition-opacity"
+                                    fill="none"
+                                    stroke="white"
+                                    viewBox="0 0 24 24"
+                                    strokeWidth={3}
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      d="M5 13l4 4L19 7"
+                                    />
+                                  </svg>
+                                </label>
+                                <div className="min-w-0 flex-1 space-y-1">
+                                  <p
+                                    className={
+                                      todo.isDone
+                                        ? "text-sm text-muted-foreground line-through decoration-primary/30"
+                                        : "text-sm text-foreground"
+                                    }
+                                  >
+                                    {todo.content}
                                   </p>
-                                )}
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <button
-                                  className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground/50 opacity-0 transition-all duration-200 hover:bg-blue-50 hover:text-blue-500 group-hover:opacity-100"
-                                  onClick={() => {
-                                    setEditingTodo(todo);
-                                    setEditInput(todo.content);
-                                    setEditNoteInput(todo.note || "");
-                                  }}
-                                >
-                                  <svg
-                                    className="w-4 h-4"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
+                                  {todo.note && (
+                                    <p className="flex items-center gap-1 text-xs text-muted-foreground">
+                                      <span>📝</span> {todo.note}
+                                    </p>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <button
+                                    className={`flex h-7 w-7 items-center justify-center rounded-lg transition-all duration-200 ${
+                                      isTodoLocked
+                                        ? "cursor-not-allowed text-muted-foreground/40 opacity-60"
+                                        : "text-muted-foreground/50 opacity-0 hover:bg-blue-50 hover:text-blue-500 group-hover:opacity-100"
+                                    }`}
+                                    onClick={() => {
+                                      setEditingTodo(todo);
+                                      setEditInput(todo.content);
+                                      setEditNoteInput(todo.note || "");
+                                    }}
+                                    type="button"
+                                    disabled={isTodoLocked}
                                   >
-                                    <path
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      strokeWidth={2}
-                                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                                    />
-                                  </svg>
-                                </button>
-                                <button
-                                  className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground/50 opacity-0 transition-all duration-200 hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
-                                  onClick={() => handleDeleteTodo(todo.id)}
-                                >
-                                  <svg
-                                    className="w-4 h-4"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
+                                    <svg
+                                      className="w-4 h-4"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      viewBox="0 0 24 24"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                                      />
+                                    </svg>
+                                  </button>
+                                  <button
+                                    className={`flex h-7 w-7 items-center justify-center rounded-lg transition-all duration-200 ${
+                                      isTodoLocked
+                                        ? "cursor-not-allowed text-muted-foreground/40 opacity-60"
+                                        : "text-muted-foreground/50 opacity-0 hover:bg-blue-50 hover:text-blue-500 group-hover:opacity-100"
+                                    }`}
+                                    onClick={() => handleDeleteTodo(todo.id)}
+                                    type="button"
+                                    disabled={isTodoLocked}
                                   >
-                                    <path
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      strokeWidth={2}
-                                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                                    />
-                                  </svg>
-                                </button>
+                                    <svg
+                                      className="w-4 h-4"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      viewBox="0 0 24 24"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                      />
+                                    </svg>
+                                  </button>
+                                </div>
                               </div>
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       )}
                     </div>
