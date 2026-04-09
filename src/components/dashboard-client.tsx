@@ -591,12 +591,16 @@ export function DashboardClient({
           <div className="relative group">
             {expiredTodoCount > 0 && onOpenExpiredAssistant && (
               <button
-                className="absolute -right-2 -top-2 z-20 flex h-7 w-7 items-center justify-center rounded-full border border-amber-200/90 bg-[linear-gradient(135deg,#f59e0b,#f97316)] text-[11px] text-white shadow-[0_8px_20px_rgba(249,115,22,0.4)] transition-all duration-300 hover:scale-105 hover:shadow-[0_10px_24px_rgba(249,115,22,0.5)]"
+                className="absolute -right-2 -top-2 z-20 flex h-8 w-8 items-center justify-center rounded-full border border-amber-100 bg-[linear-gradient(135deg,#f59e0b,#ea580c)] text-xs font-bold text-white shadow-[0_12px_28px_rgba(234,88,12,0.55)] transition-all duration-300 [animation:warning-bounce_0.75s_cubic-bezier(0.34,1.56,0.64,1)_infinite,warning-glow_1.2s_ease-in-out_infinite] hover:scale-110 hover:shadow-[0_16px_32px_rgba(234,88,12,0.75)]"
                 onClick={onOpenExpiredAssistant}
                 type="button"
               >
-                <span className="absolute -inset-1 -z-10 animate-ping rounded-full bg-amber-400/35" />
-                <span>!</span>
+                <span className="absolute -inset-1 -z-10 rounded-full bg-amber-300/60 [animation:warning-ring-blast_0.95s_ease-out_infinite]" />
+                <span className="absolute -inset-2 -z-20 rounded-full border border-orange-300/60 [animation:warning-ring-blast_1.15s_ease-out_infinite] [animation-delay:180ms]" />
+                <span className="absolute inset-0 rounded-full [animation:warning-flash_1.1s_ease-in-out_infinite]" />
+                <span className="[animation:warning-shake_0.7s_ease-in-out_infinite,warning-pop_0.7s_ease-in-out_infinite]">
+                  !
+                </span>
                 <span className="absolute -right-1.5 -top-1.5 inline-flex min-h-4 min-w-4 items-center justify-center rounded-full bg-rose-600 px-1 text-[10px] font-semibold leading-none text-white">
                   {expiredTodoCount > 99 ? "99+" : expiredTodoCount}
                 </span>

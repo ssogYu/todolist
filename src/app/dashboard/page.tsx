@@ -139,7 +139,7 @@ export default function DashboardPage() {
             {expiredTodos.length > 1 && (
               <div className="flex items-center gap-2">
                 <Button
-                  className="rounded-xl bg-amber-500 text-white hover:bg-amber-500/90"
+                  className="rounded-xl border border-amber-300/60 bg-[linear-gradient(135deg,#f59e0b,#ea580c)] text-white shadow-md shadow-amber-200/70 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-amber-300/70"
                   disabled={expiredActionLoading}
                   onClick={() =>
                     handleExpiredAction(
@@ -150,10 +150,10 @@ export default function DashboardPage() {
                   size="sm"
                   type="button"
                 >
-                  {expiredActionLoading ? <Spinner /> : "全部加入今天"}
+                  {expiredActionLoading ? <Spinner /> : "✨ 全部加入今天"}
                 </Button>
                 <Button
-                  className="rounded-xl"
+                  className="rounded-xl border-rose-200 bg-white text-rose-700 transition-all duration-300 hover:-translate-y-0.5 hover:bg-rose-50 hover:shadow-md hover:shadow-rose-100"
                   disabled={expiredActionLoading}
                   onClick={() =>
                     handleExpiredAction(
@@ -165,7 +165,7 @@ export default function DashboardPage() {
                   type="button"
                   variant="outline"
                 >
-                  {expiredActionLoading ? <Spinner /> : "全部放弃"}
+                  {expiredActionLoading ? <Spinner /> : "🗑 全部放弃"}
                 </Button>
               </div>
             )}
@@ -189,7 +189,7 @@ export default function DashboardPage() {
                   </div>
                   <div className="flex items-center gap-1">
                     <button
-                      className="flex h-8 items-center justify-center rounded-lg px-3 text-sm text-amber-800 transition-all duration-200 hover:bg-amber-100 hover:text-amber-950"
+                      className="inline-flex h-8 items-center justify-center rounded-lg border border-amber-300/60 bg-gradient-to-r from-amber-500 to-orange-500 px-3 text-sm font-medium text-white shadow-sm shadow-amber-200/70 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-amber-300/80"
                       disabled={expiredActionLoading}
                       onClick={() =>
                         handleExpiredAction("moveToToday", [todo.id])
@@ -199,7 +199,7 @@ export default function DashboardPage() {
                       {expiredActionLoading ? <Spinner /> : "加入今天"}
                     </button>
                     <button
-                      className="flex h-8 items-center justify-center rounded-lg px-3 text-sm text-rose-700 transition-all duration-200 hover:bg-rose-50 hover:text-rose-800"
+                      className="inline-flex h-8 items-center justify-center rounded-lg border border-rose-200 bg-white px-3 text-sm font-medium text-rose-700 shadow-sm shadow-rose-100/80 transition-all duration-300 hover:-translate-y-0.5 hover:bg-rose-50 hover:shadow-md hover:shadow-rose-100"
                       disabled={expiredActionLoading}
                       onClick={() => handleExpiredAction("delete", [todo.id])}
                       type="button"
