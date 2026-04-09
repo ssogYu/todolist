@@ -63,7 +63,6 @@ export function DashboardClient({
   );
   const [groupName, setGroupName] = useState("");
   const [inviteCode, setInviteCode] = useState("");
-  const [error, setError] = useState<string | null>();
   const [savingTodo, setSavingTodo] = useState(false);
   const [creatingGroup, setCreatingGroup] = useState(false);
   const [joiningGroup, setJoiningGroup] = useState(false);
@@ -166,7 +165,6 @@ export function DashboardClient({
 
   const loadDashboard = useCallback(async () => {
     setLoading(true);
-    setError(null);
 
     try {
       const [todoResponse, groupsResponse] = await Promise.all([
@@ -177,7 +175,6 @@ export function DashboardClient({
       setTodos(todoResponse.todos);
       setGroups(groupsResponse.groups);
     } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : "加载失败");
     } finally {
       setLoading(false);
     }
@@ -190,11 +187,9 @@ export function DashboardClient({
   async function handleAddTodo(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (isPastSelectedDate) {
-      setError(operationLockedMessage);
       return;
     }
     setSavingTodo(true);
-    setError(null);
 
     try {
       const response = await apiFetch<{ todo: TodoItem }>("/api/todos", {
@@ -211,9 +206,6 @@ export function DashboardClient({
       setTodoInput("");
       setNoteInput("");
     } catch (submitError) {
-      setError(
-        submitError instanceof Error ? submitError.message : "添加任务失败",
-      );
     } finally {
       setSavingTodo(false);
     }
@@ -222,7 +214,6 @@ export function DashboardClient({
   async function handleToggleTodo(todoId: string, isDone: boolean) {
     const currentTodo = todos.find((todo) => todo.id === todoId);
     if (!currentTodo || isBeforeToday(currentTodo.targetDate)) {
-      setError(operationLockedMessage);
       return;
     }
     const previousTodos = todos;
@@ -238,9 +229,6 @@ export function DashboardClient({
       });
     } catch (toggleError) {
       setTodos(previousTodos);
-      setError(
-        toggleError instanceof Error ? toggleError.message : "更新任务失败",
-      );
     }
   }
 
@@ -251,7 +239,6 @@ export function DashboardClient({
   ) {
     const currentTodo = todos.find((todo) => todo.id === todoId);
     if (!currentTodo || isBeforeToday(currentTodo.targetDate)) {
-      setError(operationLockedMessage);
       setEditingTodo(null);
       return;
     }
@@ -271,9 +258,6 @@ export function DashboardClient({
       });
     } catch (updateError) {
       setTodos(previousTodos);
-      setError(
-        updateError instanceof Error ? updateError.message : "更新任务失败",
-      );
     }
   }
 
@@ -288,16 +272,12 @@ export function DashboardClient({
       });
     } catch (deleteError) {
       setTodos(previousTodos);
-      setError(
-        deleteError instanceof Error ? deleteError.message : "删除任务失败",
-      );
     }
   }
 
   async function handleCreateGroup(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setCreatingGroup(true);
-    setError(null);
 
     try {
       const response = await apiFetch<GroupMutationResponse>("/api/groups", {
@@ -308,9 +288,6 @@ export function DashboardClient({
       setGroups((current) => [response.group, ...current]);
       setGroupName("");
     } catch (createError) {
-      setError(
-        createError instanceof Error ? createError.message : "创建群组失败",
-      );
     } finally {
       setCreatingGroup(false);
     }
@@ -319,7 +296,6 @@ export function DashboardClient({
   async function handleJoinGroup(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setJoiningGroup(true);
-    setError(null);
 
     try {
       const response = await apiFetch<GroupMutationResponse>(
@@ -336,7 +312,6 @@ export function DashboardClient({
       });
       setInviteCode("");
     } catch (joinError) {
-      setError(joinError instanceof Error ? joinError.message : "加入群组失败");
     } finally {
       setJoiningGroup(false);
     }
@@ -664,12 +639,6 @@ export function DashboardClient({
                   className="h-full rounded-full bg-gradient-to-r from-primary to-primary/60 transition-all duration-500 ease-out"
                   style={{ width: `${progressPercent}%` }}
                 />
-              </div>
-            )}
-
-            {error && (
-              <div className="mb-6 rounded-2xl border border-rose-200/70 bg-rose-50/80 px-4 py-3 text-sm text-rose-600">
-                {error}
               </div>
             )}
 

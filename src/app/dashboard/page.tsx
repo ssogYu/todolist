@@ -30,7 +30,6 @@ export default function DashboardPage() {
   const [expiredLoading, setExpiredLoading] = useState(true);
   const [expiredPanelOpen, setExpiredPanelOpen] = useState(false);
   const [expiredActionLoading, setExpiredActionLoading] = useState(false);
-  const [expiredError, setExpiredError] = useState<string | null>(null);
 
   const expiredCountLabel = useMemo(() => {
     if (expiredTodos.length === 1) {
@@ -60,15 +59,11 @@ export default function DashboardPage() {
 
   const loadExpiredTodos = useCallback(async () => {
     setExpiredLoading(true);
-    setExpiredError(null);
 
     try {
       const data = await apiFetch<ExpiredTodosResponse>("/api/todos/expired");
       setExpiredTodos(data.expiredTodos);
     } catch (error) {
-      setExpiredError(
-        error instanceof Error ? error.message : "加载未完成任务失败",
-      );
     } finally {
       setExpiredLoading(false);
     }
@@ -87,7 +82,6 @@ export default function DashboardPage() {
     }
 
     setExpiredActionLoading(true);
-    setExpiredError(null);
 
     try {
       await apiFetch("/api/todos/expired", {
@@ -99,9 +93,6 @@ export default function DashboardPage() {
       );
       setRefreshTrigger((current) => current + 1);
     } catch (error) {
-      setExpiredError(
-        error instanceof Error ? error.message : "处理未完成任务失败",
-      );
     } finally {
       setExpiredActionLoading(false);
     }
@@ -129,12 +120,6 @@ export default function DashboardPage() {
                 支持放弃删除或加入今天，可单条和批量处理。
               </DialogDescription>
             </DialogHeader>
-
-            {expiredError && (
-              <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-600">
-                {expiredError}
-              </div>
-            )}
 
             {expiredTodos.length > 1 && (
               <div className="flex items-center gap-2">
