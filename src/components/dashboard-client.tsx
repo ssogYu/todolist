@@ -297,39 +297,51 @@ export function DashboardClient() {
         </DialogContent>
       </Dialog>
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-2 px-4 py-6 md:px-8 lg:px-10">
-        <Card className="overflow-hidden bg-white/95">
-          <CardContent className="flex flex-col gap-4 px-6 py-6 md:flex-row md:items-center md:justify-between">
-            <div className="space-y-2">
-              <p className="text-sm font-medium text-primary">Todo List</p>
-              <div className="flex flex-wrap items-center gap-3">
-                <h1 className="text-3xl font-semibold tracking-tight">
-                  你好，{user?.username}
-                </h1>
-                <Badge>{formatDisplayDate(selectedDate)}</Badge>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                今日已完成 {completedCount} / {todos.length} 项，继续加油哦～。
-              </p>
-            </div>
+        <div className="flex items-center justify-between">
+          <div className="space-y-2">
             <div className="flex flex-wrap items-center gap-3">
-              <Input
-                className="w-full md:w-[180px]"
-                onChange={(event) => setSelectedDate(event.target.value)}
-                type="date"
-                value={selectedDate}
-              />
-              <Button onClick={handleLogout} variant="ghost">
-                退出登录
-              </Button>
+              <h1 className="text-3xl font-semibold tracking-tight">
+                你好，{user?.username}
+              </h1>
             </div>
-          </CardContent>
-        </Card>
+            <p className="text-sm text-muted-foreground">
+              今日已完成 {completedCount} / {todos.length} 项，继续加油哦～。
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="relative group">
+              <div className="flex items-center gap-2 rounded-full bg-secondary px-3 py-1.5 cursor-pointer hover:bg-secondary/80 transition-colors">
+                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground font-medium">
+                  {user?.username?.charAt(0).toUpperCase()}
+                </div>
+                <span className="text-sm font-medium">{user?.username}</span>
+              </div>
+              <div className="absolute right-0 top-full mt-1 z-50 min-w-[120px] overflow-hidden rounded-lg border border-border bg-card shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
+                <button
+                  className="w-full px-4 py-2.5 text-left text-sm text-destructive hover:bg-destructive/10 transition-colors"
+                  onClick={() => {
+                    handleLogout();
+                  }}
+                >
+                  退出登录
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
 
         <div className="grid gap-6">
           <Card className="bg-white/95">
             <CardHeader>
-              <CardTitle>待办事项</CardTitle>
-              <CardDescription>支持按日期查看历史任务</CardDescription>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-xl">待办事项</CardTitle>
+                <Input
+                  className="w-[140px] md:w-[160px]"
+                  onChange={(event) => setSelectedDate(event.target.value)}
+                  type="date"
+                  value={selectedDate}
+                />
+              </div>
             </CardHeader>
             <CardContent className="space-y-5">
               <form className="space-y-3" onSubmit={handleAddTodo}>
