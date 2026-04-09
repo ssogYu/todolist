@@ -68,6 +68,9 @@ export function DashboardClient({
   const [creatingGroup, setCreatingGroup] = useState(false);
   const [joiningGroup, setJoiningGroup] = useState(false);
   const [groupPanelOpen, setGroupPanelOpen] = useState(false);
+  const [editingTodo, setEditingTodo] = useState<TodoItem | null>(null);
+  const [editInput, setEditInput] = useState("");
+  const [editNoteInput, setEditNoteInput] = useState("");
 
   const motivationalQuotes = [
     "专注当下，一步一步完成目标",
@@ -207,6 +210,33 @@ export function DashboardClient({
       setTodos(previousTodos);
       setError(
         toggleError instanceof Error ? toggleError.message : "更新任务失败",
+      );
+    }
+  }
+
+  async function handleUpdateTodo(
+    todoId: string,
+    content: string,
+    note?: string | null,
+  ) {
+    const previousTodos = todos;
+
+    setTodos((current) =>
+      current.map((todo) =>
+        todo.id === todoId ? { ...todo, content, note: note ?? null } : todo,
+      ),
+    );
+    setEditingTodo(null);
+
+    try {
+      await apiFetch<{ todo: TodoItem }>(`/api/todos/${todoId}`, {
+        method: "PATCH",
+        body: JSON.stringify({ content, note }),
+      });
+    } catch (updateError) {
+      setTodos(previousTodos);
+      setError(
+        updateError instanceof Error ? updateError.message : "更新任务失败",
       );
     }
   }
@@ -433,6 +463,67 @@ export function DashboardClient({
         </DialogContent>
       </Dialog>
 
+      <Dialog
+        open={editingTodo !== null}
+        onOpenChange={() => setEditingTodo(null)}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogClose />
+          <DialogHeader>
+            <DialogTitle className="text-xl font-semibold">
+              编辑任务
+            </DialogTitle>
+            <DialogDescription>修改任务内容和备注</DialogDescription>
+          </DialogHeader>
+          <form
+            className="space-y-4"
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (editingTodo && editInput.trim()) {
+                handleUpdateTodo(
+                  editingTodo.id,
+                  editInput.trim(),
+                  editNoteInput.trim() || null,
+                );
+              }
+            }}
+          >
+            <div className="space-y-2">
+              <Input
+                value={editInput}
+                onChange={(e) => setEditInput(e.target.value)}
+                placeholder="任务内容"
+                required
+                className="rounded-xl"
+              />
+              <textarea
+                value={editNoteInput}
+                onChange={(e) => setEditNoteInput(e.target.value)}
+                placeholder="备注（可选）"
+                className="w-full rounded-xl border border-border/50 bg-secondary/20 px-4 py-3 text-sm resize-none min-h-[80px]"
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                className="flex-1 rounded-xl"
+                onClick={() => setEditingTodo(null)}
+              >
+                取消
+              </Button>
+              <Button
+                type="submit"
+                className="flex-1 rounded-xl bg-primary hover:bg-primary/90"
+                disabled={!editInput.trim()}
+              >
+                保存
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
       <div className="relative mx-auto max-w-5xl px-6 py-10 lg:px-8">
         <header className="mb-6 flex items-start justify-between">
           <div className="space-y-1">
@@ -635,7 +726,10 @@ export function DashboardClient({
                           </p>
                         </div>
                       ) : (
-                        <div className="space-y-2 overflow-y-auto" style={{ maxHeight: "500px" }}>
+                        <div
+                          className="space-y-2 overflow-y-auto"
+                          style={{ maxHeight: "500px" }}
+                        >
                           {filtered.map((todo) => (
                             <div
                               className="group flex items-start gap-3 rounded-xl border border-border/50 bg-card/80 p-4 transition-all duration-200 hover:border-primary/30 hover:bg-card hover:shadow-md hover:shadow-primary/5"
@@ -683,24 +777,48 @@ export function DashboardClient({
                                   </p>
                                 )}
                               </div>
-                              <button
-                                className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground/50 opacity-0 transition-all duration-200 hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
-                                onClick={() => handleDeleteTodo(todo.id)}
-                              >
-                                <svg
-                                  className="w-4 h-4"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
+                              <div className="flex items-center gap-1">
+                                <button
+                                  className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground/50 opacity-0 transition-all duration-200 hover:bg-blue-50 hover:text-blue-500 group-hover:opacity-100"
+                                  onClick={() => {
+                                    setEditingTodo(todo);
+                                    setEditInput(todo.content);
+                                    setEditNoteInput(todo.note || "");
+                                  }}
                                 >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                                  />
-                                </svg>
-                              </button>
+                                  <svg
+                                    className="w-4 h-4"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                                    />
+                                  </svg>
+                                </button>
+                                <button
+                                  className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground/50 opacity-0 transition-all duration-200 hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
+                                  onClick={() => handleDeleteTodo(todo.id)}
+                                >
+                                  <svg
+                                    className="w-4 h-4"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                    />
+                                  </svg>
+                                </button>
+                              </div>
                             </div>
                           ))}
                         </div>
