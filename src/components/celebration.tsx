@@ -1,8 +1,15 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
+import { todayDateString } from "@/lib/date";
 
-export function Celebration({ todos, loading }: { todos: { isDone: boolean }[]; loading: boolean }) {
+export function Celebration({
+  todos,
+  loading,
+}: {
+  todos: { isDone: boolean; targetDate: string }[];
+  loading: boolean;
+}) {
   const [show, setShow] = useState(false);
   const [animate, setAnimate] = useState(false);
   const showRef = useRef(false);
@@ -28,13 +35,17 @@ export function Celebration({ todos, loading }: { todos: { isDone: boolean }[]; 
   useEffect(() => {
     if (loading || todos.length === 0) return;
 
+    const today = todayDateString();
+    const isTodayTodos = todos.every((todo) => todo.targetDate === today);
     const allCompleted = todos.every((todo) => todo.isDone);
-    const shouldCelebrate = allCompleted && !prevCompletedRef.current && todos.length > 0;
+    const shouldCelebrate =
+      isTodayTodos && allCompleted && !prevCompletedRef.current;
 
     if (shouldCelebrate && !showRef.current) {
+      prevCompletedRef.current = true;
       showRef.current = true;
       queueMicrotask(() => celebrate());
-    } else if (!allCompleted) {
+    } else if (!allCompleted || !isTodayTodos) {
       prevCompletedRef.current = false;
     }
   }, [todos, loading, celebrate]);
