@@ -235,7 +235,7 @@ export function DashboardClient({
   async function handleUpdateTodo(
     todoId: string,
     content: string,
-    note?: string | null,
+    note?: string,
   ) {
     const currentTodo = todos.find((todo) => todo.id === todoId);
     if (!currentTodo || isBeforeToday(currentTodo.targetDate)) {
@@ -246,7 +246,9 @@ export function DashboardClient({
 
     setTodos((current) =>
       current.map((todo) =>
-        todo.id === todoId ? { ...todo, content, note: note ?? null } : todo,
+        todo.id === todoId
+          ? { ...todo, content, ...(note !== undefined ? { note } : {}) }
+          : todo,
       ),
     );
     setEditingTodo(null);
@@ -254,7 +256,10 @@ export function DashboardClient({
     try {
       await apiFetch<{ todo: TodoItem }>(`/api/todos/${todoId}`, {
         method: "PATCH",
-        body: JSON.stringify({ content, note }),
+        body: JSON.stringify({
+          content,
+          ...(note !== undefined ? { note } : {}),
+        }),
       });
     } catch (updateError) {
       setTodos(previousTodos);
@@ -495,10 +500,11 @@ export function DashboardClient({
             onSubmit={(e) => {
               e.preventDefault();
               if (editingTodo && editInput.trim()) {
+                const trimmedNote = editNoteInput.trim();
                 handleUpdateTodo(
                   editingTodo.id,
                   editInput.trim(),
-                  editNoteInput.trim() || null,
+                  trimmedNote ? trimmedNote : undefined,
                 );
               }
             }}
